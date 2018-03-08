@@ -55,11 +55,11 @@ public abstract class TradeChest implements Serializable {
 	 * @param owner Owner of the TradeChest as Entity Player
 	 * @param reference Reference Number of TradeChest
 	 */
-	public TradeChest(Sign sign, Chest chest, Player owner, int reference, Material mat, int amount) {
+	public TradeChest(Sign sign, Chest chest, UUID owner, int reference, Material mat, int amount) {
 		signLocation = new SerializableLocation(sign.getLocation());
 		chestLocation = new SerializableLocation(chest.getLocation());
 		
-		this.owner = owner.getUniqueId();
+		this.owner = owner;
 		this.reference = reference;
 		
 		this.mat = mat;

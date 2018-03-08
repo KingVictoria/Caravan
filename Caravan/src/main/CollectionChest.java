@@ -1,6 +1,7 @@
 package main;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
@@ -14,12 +15,9 @@ import org.bukkit.inventory.ItemStack;
  */
 public class CollectionChest extends TradeChest implements Serializable {
 	private static final long serialVersionUID = -7617422746413144920L;
-	
-	boolean selling;	// Determines whether this collection chest is part of a selling pair or is a buyer's receipt
 
-	public CollectionChest(Sign sign, Chest chest, Player owner, int reference, Material mat, int amount, boolean selling) {
+	public CollectionChest(Sign sign, Chest chest, UUID owner, int reference, Material mat, int amount) {
 		super(sign, chest, owner, reference, mat, amount);
-		this.selling = selling;
 	}
 
 	@Override

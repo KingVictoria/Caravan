@@ -7,7 +7,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class Caravan extends JavaPlugin {
 	
-	public static ArrayList<TradeChest> tradeChests = new ArrayList<>();
+	/* TODO:
+	 * - Create "Shop" which stores one collection chest and one distribution chest
+	 * - 
+	 */
 	
 	/**
 	 * Initialization

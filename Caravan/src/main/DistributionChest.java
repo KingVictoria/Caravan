@@ -1,6 +1,7 @@
 package main;
 
 import java.io.Serializable;
+import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
@@ -15,7 +16,7 @@ import org.bukkit.inventory.ItemStack;
 public class DistributionChest extends TradeChest implements Serializable {
 	private static final long serialVersionUID = 6802928152779620567L;
 
-	public DistributionChest(Sign sign, Chest chest, Player owner, int reference, Material mat, int amount) {
+	public DistributionChest(Sign sign, Chest chest, UUID owner, int reference, Material mat, int amount) {
 		super(sign, chest, owner, reference, mat, amount);
 	}
 
