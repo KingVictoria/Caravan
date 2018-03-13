@@ -2,9 +2,6 @@ package main;
 
 import org.bukkit.Bukkit;
 import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
-
-import net.md_5.bungee.api.ChatColor;
 
 public class Signs {
 	/**

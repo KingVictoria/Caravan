@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * A type of TradeChest which receives items. Can be part of a selling pair or a buyer's receipt chest.
@@ -16,12 +16,14 @@ import org.bukkit.inventory.ItemStack;
 public class CollectionChest extends TradeChest implements Serializable {
 	private static final long serialVersionUID = -7617422746413144920L;
 
-	public CollectionChest(Sign sign, Chest chest, UUID owner, int reference, Material mat, int amount) {
-		super(sign, chest, owner, reference, mat, amount);
+	public CollectionChest(Sign sign, Chest chest, UUID owner, int reference, ItemMeta meta, Material mat, int amount) {
+		super(sign, chest, owner, reference, meta, mat, amount);
+		
+		// TODO format sign
 	}
 
 	@Override
-	public boolean transactable(int num) {
+	public boolean transactable(int num) {		
 		int requiredSlots = (amount * num) / mat.getMaxStackSize();
 		if(amount * num % mat.getMaxStackSize() > 0) requiredSlots++;
 		

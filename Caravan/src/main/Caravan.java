@@ -2,7 +2,6 @@ package main;
 
 import java.util.ArrayList;
 
-import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Caravan extends JavaPlugin {
@@ -28,7 +27,7 @@ public class Caravan extends JavaPlugin {
 	 * Initialization
 	 */
 	public void onLoad() {
-		
+		Shop.shops = new ArrayList<Shop>();	// Loads Shops TODO load this from file
 	}
 	
 	/**

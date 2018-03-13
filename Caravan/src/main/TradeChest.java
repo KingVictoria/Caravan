@@ -8,7 +8,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.entity.Player;
+import org.bukkit.inventory.meta.ItemMeta;
 
 /**
  * Abstract TradeChest class from which the two types (Collection and Distribution) extend
@@ -42,11 +42,12 @@ public abstract class TradeChest implements Serializable {
 	SerializableLocation signLocation;	// Location of the Chest Block
 	SerializableLocation chestLocation;	// Location of the Sign Block
 	
-	int reference;	// Number associated with this chest for direct reference (if it's a sale chest the same number is used for the chest of the opposite type
+	int reference;	// Reference number of the shop this TradeChest is associated with
 	UUID owner;		// Unique Identification of owner
 	
-	Material mat;	// Type of exchange item
-	int amount;		// Amount of item to exchange
+	ItemMetaSerializer meta;	// Serialzed meta of item
+	Material mat;				// Material of item
+	int amount;					// Amount of item to exchange
 	
 	/**
 	 * Creates a generic TradeChest
@@ -55,13 +56,14 @@ public abstract class TradeChest implements Serializable {
 	 * @param owner Owner of the TradeChest as Entity Player
 	 * @param reference Reference Number of TradeChest
 	 */
-	public TradeChest(Sign sign, Chest chest, UUID owner, int reference, Material mat, int amount) {
+	public TradeChest(Sign sign, Chest chest, UUID owner, int reference, ItemMeta meta, Material mat, int amount) {
 		signLocation = new SerializableLocation(sign.getLocation());
 		chestLocation = new SerializableLocation(chest.getLocation());
 		
 		this.owner = owner;
 		this.reference = reference;
 		
+		this.meta = ItemMetaSerializer.serialize(meta, mat);
 		this.mat = mat;
 		this.amount = amount;
 	}
@@ -80,6 +82,14 @@ public abstract class TradeChest implements Serializable {
 	 */
 	public Sign getSign() {
 		return (Sign) signLocation.getLocation().getBlock().getState();
+	}
+	
+	/**
+	 * Gets the ItemMeta of the traded item
+	 * @return ItemMeta
+	 */
+	public ItemMeta getItemMeta() {
+		return ItemMetaSerializer.deSerialize(meta);
 	}
 	
 	/**

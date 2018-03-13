@@ -1,50 +1,84 @@
 package main;
 
+import java.util.ArrayList;
+
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
-import org.bukkit.material.Sign;
+import org.bukkit.block.Sign;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 
 public class PlayerInteractListener implements Listener {
 	
+	/*
+	 * PROCESS: 
+	 * 1. Get Generated Key(s) (Shop -> Dist and Coll) (Buy -> Recp)
+	 * 2. Right click on sign on chest with appropriate key (will eventually need to check for reinforcement)
+	 * 3. IF SHOP -> Fill with necessary materials and right click to activate
+	 * 4. IF RECP -> Fill with transaction requirement and right click to send trade
+	 */
+	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
-		Player player = e.getPlayer();	// The Player
+		Player player = e.getPlayer();
 		
-		if(!e.getClickedBlock().getType().equals(Material.WALL_SIGN)) return; // If not a sign, return
+		/* TEST CODE */
 		
-		org.bukkit.block.Sign signBlock = (org.bukkit.block.Sign) e.getClickedBlock().getState();	// The sign block
-		Sign signData = (Sign) e.getClickedBlock().getState().getData(); 							// The data of the sign that was clicked
-		Block block = e.getClickedBlock().getRelative(signData.getAttachedFace()); 					// Reference attached block
+		if(e.getClickedBlock().getType().equals(Material.GRASS)) {
+			ItemStack succ = new ItemStack(Material.PAPER);
+			ItemMeta succMeta = succ.getItemMeta();
+			ArrayList<String> lore = new ArrayList<>();
+			lore.add("succ");
+			succMeta.setLore(lore);
+			succMeta = ItemMetaSerializer.deSerialize(ItemMetaSerializer.serialize(succMeta, Material.PAPER));
+			Bukkit.getLogger().info(""+succMeta.hasLore());
+			// **AHEM** PRAISE TITOS
+			succ.setItemMeta(succMeta);
+			player.getInventory().addItem(succ);
+		}
+		
+		/* TEST CODE */
+		
+		if(!player.getInventory().getItemInMainHand().getType().equals(Material.PAPER)) return;	// Make sure item in hand is paper
+		
+		ItemStack key = player.getInventory().getItemInMainHand();
+		
+		if(!e.getClickedBlock().getType().equals(Material.WALL_SIGN)) return; // If not a wall sign, return
+		
+		Sign sign = (Sign) e.getClickedBlock().getState();
+		Block block = e.getClickedBlock().getRelative(((org.bukkit.material.Sign) sign.getData()).getAttachedFace());
 		
 		if(!(block.getType().equals(Material.CHEST) || block.getType().equals(Material.TRAPPED_CHEST))) return;	// If not a chest, return
 		
-		Chest chest = (Chest) block.getState();	// The Chest
-		Inventory inv = chest.getInventory();	// The Chest's Inventory
+		Chest chest = (Chest) block.getState();
 		
-		/** TEST CODE
-		Signs signs = Signs.with(signBlock);
-		if(signs.validate(player)) {
-			if(signs.type().equals("DIST")) Caravan.tradeChests.add(new DistributionChest(signBlock, chest, player, signs.reference(), 
-					Material.PAPER, 64));
-			if(signs.type().equals("COLL")) Caravan.tradeChests.add(new CollectionChest(signBlock, chest, player, signs.reference(), 
-					Material.PAPER, 64, true));
-			if(signs.type().equals("RECP")) Caravan.tradeChests.add(new CollectionChest(signBlock, chest, player, signs.reference(), 
-					Material.PAPER, 64, false));
-			
-			Bukkit.getLogger().info("transactable: " + Caravan.tradeChests.get(0).transactable(1));
-		}
-		*/
+		ItemMeta keyMeta = key.getItemMeta();
+		try { if(Shop.getShop(Integer.parseInt(keyMeta.getLore().get(0))) == null) return; } catch (Exception ex) { return; }
+		Shop shop = Shop.getShop(Integer.parseInt(keyMeta.getLore().get(0)));
 		
-		// TODO Check sign for type and valid id
-		// TODO Check valid id against player
-		// TODO Create type from chest
+		if(keyMeta.getDisplayName().equals("Distribution Key")) {
+			if(shop.getDistributionChest() != null) return;	// If the DistributionChest already exists, return
+			shop.makeDistributionChest(chest, sign);
+		} // Distribution
+		
+		else if(keyMeta.getDisplayName().equals("Collection Key")) {
+			if(shop.getDistributionChest() != null) return;	// If the DistributionChest already exists, return
+			shop.makeCollectionChest(chest, sign);
+		} // Collection
+		
+		else if(keyMeta.getDisplayName().equals("Receipt Key")) {
+			shop.addReceiptChest(chest, sign, player);
+		} // Receipt
+		
+		else return;
+		
+		player.getInventory().getItemInMainHand().setAmount(0); // Remove item from hand
 		
 	}
 
