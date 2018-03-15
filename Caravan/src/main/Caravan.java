@@ -1,7 +1,11 @@
 package main;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.serialization.ConfigurationSerialization;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Caravan extends JavaPlugin {
@@ -27,13 +31,21 @@ public class Caravan extends JavaPlugin {
 	 * Initialization
 	 */
 	public void onLoad() {
-		loadShops();
+		
 	}
 	
 	/**
 	 * Enabled - Now have safe access to everything
 	 */
 	public void onEnable() {
+		ConfigurationSerialization.registerClass(Shop.class);
+		ConfigurationSerialization.registerClass(TradeChest.class);
+		ConfigurationSerialization.registerClass(DistributionChest.class);
+		ConfigurationSerialization.registerClass(CollectionChest.class);
+		ConfigurationSerialization.registerClass(ReceiptChest.class);
+		
+		loadShops();
+		
 		getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
 		
 		// TODO test commands
@@ -46,16 +58,47 @@ public class Caravan extends JavaPlugin {
 		saveShops();
 	}
 	
+	/**
+	 * Loads the shop data
+	 */
+	@SuppressWarnings("unchecked")
 	public void loadShops() {
+		checkData();
+		FileConfiguration myConfig = this.getConfig();	
 		
-		// TODO load shops
-		// ArrayList<Shop> shops = new ArrayList<>();
+		if(!myConfig.contains("shops")) Shop.shops = new ArrayList<Shop>();
 		
-		Shop.shops = new ArrayList<Shop>();
+		Shop.shops = (ArrayList<Shop>) myConfig.get("shops");
 	}
 	
+	/**
+	 * Ensures the configuration folder exists
+	 */
+	private void checkData() {
+		if(!getDataFolder().exists()) {
+			getLogger().info("[" + getDescription().getName() + "] data folders not found, creating!");
+			getDataFolder().mkdirs();
+		}
+		
+		File file = new File(getDataFolder(), "config.yml");
+		if (!file.exists()) {
+			getLogger().info("config.yml not found, creating!");
+			try {
+				file.createNewFile();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			saveDefaultConfig();
+		} else getLogger().info("config.yml found, loading!");
+	}
+
+	/**
+	 * Saves the shop data
+	 */
 	public void saveShops() {
-		// TODO save shops
+		FileConfiguration myConfig = this.getConfig();
+		
+		myConfig.set("shops", Shop.shops);
 	}
 
 }
