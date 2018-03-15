@@ -1,18 +1,19 @@
 package main;
 
-import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-public class Shop implements Serializable {
-	private static final long serialVersionUID = -5465645480327211480L;
+public class Shop implements ConfigurationSerializable {
 	
 	public static ArrayList<Shop> shops; // All Shops
 	
@@ -21,13 +22,11 @@ public class Shop implements Serializable {
 	
 	private ArrayList<ReceiptChest> recps;	// ReceiptChests tied to this Shop
 	
-	private ItemMetaSerializer metaToSell;	// Item being sold serialized
-	private Material matToSell;				// Type of thing sold at this shop
-	private int amountToSell;				// Amount of thing to sell per sale
+	private ItemStack toSell;	// Item to sell
+	private int amountToSell;	// Amount of item to sell per sale
 	
-	private ItemMetaSerializer metaToBuy;	// Item being bought serialized
-	private Material matToBuy;				// Type of thing bought by this shop
-	private int amountToBuy;				// Amount of thing to buy per sale
+	private ItemStack toBuy;	// Item to buy
+	private int amountToBuy;	// Amount of item to buy per sale
 	
 	private UUID owner;		// Owner's Unique Id
 	private int reference; 	// Shop reference id
@@ -43,27 +42,66 @@ public class Shop implements Serializable {
 	}
 	
 	/**
-	 * Creates a Shop with a kind of material to sell and a kind of material to buy with amounts for each per sale
-	 * @param player Owner of the shop
-	 * @param itemToSell Sold item
-	 * @param amountToSell Sold item quantity per sale
-	 * @param itemToBuy Bought item
-	 * @param amountToBuy Bought item quantity per sale
+	 * Creates a Shop
+	 * @param player Player
+	 * @param toSell ItemStack item to sell
+	 * @param amountToSell Amount of item to sell
+	 * @param toBuy ItemStack item to buy
+	 * @param amountToBuy Amount of item to buy
 	 */
-	public Shop(Player player, ItemMeta metaToSell, Material matToSell, int amountToSell, ItemMeta metaToBuy, Material matToBuy, int amountToBuy) {
+	public Shop(Player player, ItemStack toSell, int amountToSell, ItemStack toBuy, int amountToBuy) {
 		owner = player.getUniqueId();
 		
-		this.metaToSell = ItemMetaSerializer.serialize(metaToSell, matToSell);
-		this.matToSell = matToSell;
-		this.amountToSell = amountToSell;
-		
-		this.metaToBuy = ItemMetaSerializer.serialize(metaToBuy, matToBuy);
-		this.matToBuy = matToBuy;
-		this.amountToBuy = amountToBuy;
+		this.toSell 		= toSell;
+		this.amountToSell 	= amountToSell;
+		this.toBuy			= toBuy;
+		this.amountToBuy 	= amountToBuy;
 		
 		recps = new ArrayList<>();
 		reference = generateReference();
 		shops.add(this);
+	}
+	
+	@SuppressWarnings("unchecked")
+	public Shop(Map<String, Object> map) {
+		
+		dist = (DistributionChest) 	new TradeChest((Map<String, Object>) map.get("dist"));
+		coll = (CollectionChest) 	new TradeChest((Map<String, Object>) map.get("coll"));
+		recps = new ArrayList<ReceiptChest>();
+		for(Map<String, Object> recpMap: ((ArrayList<Map<String, Object>>) map.get("recps")))
+			recps.add((ReceiptChest) new TradeChest(recpMap));
+		
+		toSell = ItemStack.deserialize((Map<String, Object>) map.get("tosell"));
+		if(map.containsKey("sellmeta")) toSell.setItemMeta(ItemMetaSerializer.deserialize((Map<String, Object>) map.get("sellmeta")));
+		amountToSell = (int) map.get("amounttosell");
+		
+		toBuy = ItemStack.deserialize((Map<String, Object>) map.get("tobuy"));
+		if(map.containsKey("buymeta")) toBuy.setItemMeta(ItemMetaSerializer.deserialize((Map<String, Object>) map.get("buymeta")));
+		amountToBuy = (int) map.get("amounttobuy");
+		
+		owner = UUID.fromString((String) map.get("owner"));
+		reference = (int) map.get("reference");
+	}
+
+	@Override
+	public Map<String, Object> serialize() {
+		Map<String, Object> map = new HashMap<>();
+		
+		map.put("dist", dist.serialize());
+		map.put("coll", coll.serialize());
+		ArrayList<Map<String, Object>> serializedRecps = new ArrayList<>();
+		for(TradeChest tradeChest: recps) serializedRecps.add(tradeChest.serialize());
+		map.put("recps", serializedRecps);
+		map.put("tosell", toSell.serialize());
+		if(toSell.hasItemMeta()) map.put("sellmeta", ItemMetaSerializer.serialize(toSell.getItemMeta()));
+		map.put("amounttosell", amountToSell);
+		map.put("tobuy", toBuy.serialize());
+		if(toBuy.hasItemMeta()) map.put("buymeta", ItemMetaSerializer.serialize(toBuy.getItemMeta()));
+		map.put("amounttobuy", amountToBuy);
+		map.put("owner", owner.toString());
+		map.put("reference", reference);
+		
+		return map;
 	}
 	
 	/**
@@ -153,7 +191,7 @@ public class Shop implements Serializable {
 	 * @param sign Sign Block
 	 */
 	public void makeDistributionChest(Chest chest, Sign sign) {
-		dist = new DistributionChest(sign, chest, owner, reference, ItemMetaSerializer.deSerialize(metaToBuy), matToBuy, amountToBuy);
+		dist = new DistributionChest(sign, chest, owner, reference, toBuy, amountToBuy);
 	}
 	
 	/**
@@ -162,7 +200,7 @@ public class Shop implements Serializable {
 	 * @param sign Sign Block
 	 */
 	public void makeCollectionChest(Chest chest, Sign sign) {
-		coll = new CollectionChest(sign, chest, owner, reference, ItemMetaSerializer.deSerialize(metaToSell), matToSell, amountToSell);
+		coll = new CollectionChest(sign, chest, owner, reference, toSell, amountToSell);
 	}
 	
 	/**
@@ -181,15 +219,13 @@ public class Shop implements Serializable {
 	 * @return 
 	 */
 	public boolean transactable(int num) {
+		if(coll == null || dist == null) return false;
+		
 		return coll.transactable(num) && dist.transactable(num);
 	}
 	
 	public int getReferenceNumber() {
 		return reference;
-	}
-	
-	public ItemMeta getSellMeta() {
-		return ItemMetaSerializer.deSerialize(metaToSell);
 	}
 	
 	/**
@@ -208,16 +244,24 @@ public class Shop implements Serializable {
 		return coll;
 	}
 	
-	public Material getBuyMaterial() {
-		return matToBuy;
+	/**
+	 * Gets the ArrayList of ReceiptChests tied to this shop
+	 * @return ArrayList<ReceiptChest>
+	 */
+	public ArrayList<ReceiptChest> getReceiptChests() {
+		return recps;
+	}
+	
+	public ItemStack getBuyItem() {
+		return toBuy;
+	}
+	
+	public ItemStack getSellItem() {
+		return toSell;
 	}
 	
 	public int getAmountToBuy() {
 		return amountToBuy;
-	}
-	
-	public Material getSellMaterial() {
-		return matToSell;
 	}
 	
 	public int getAmountToSell() {

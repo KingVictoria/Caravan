@@ -1,19 +1,20 @@
 package main;
 
-import java.io.Serializable;
 import java.util.UUID;
 
+import org.bukkit.ChatColor;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
 import org.bukkit.inventory.ItemStack;
 
-public class ReceiptChest extends CollectionChest implements Serializable {
-	private static final long serialVersionUID = 8356995416122273029L;
+public class ReceiptChest extends CollectionChest implements ConfigurationSerializable {
 
 	public ReceiptChest(Sign sign, Chest chest, UUID owner, Shop shop) {
-		super(sign, chest, owner, shop.getReferenceNumber(), shop.getSellMeta(), shop.getSellMaterial(), shop.getAmountToSell());
+		super(sign, chest, owner, shop.getReferenceNumber(), shop.getSellItem(), shop.getAmountToSell());
 		
-		// TODO format sign
+		sign.setLine(0, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "[RECP]");
+		update();
 	}
 	
 	/**
@@ -22,14 +23,25 @@ public class ReceiptChest extends CollectionChest implements Serializable {
 	 * @return
 	 */
 	public boolean enoughDosh(int num) {
-		Shop shop = Shop.getShop(reference);
+		Shop shop = Shop.getShop(getReference());
 		
 		int desiredAmount = num * shop.getAmountToBuy();
 		
 		int availibleAmount = 0;
-		for(ItemStack content: getChest().getInventory().getContents()) if(content != null && content.getType().equals(shop.getBuyMaterial())) availibleAmount += content.getAmount();
+		for(ItemStack content: getChest().getInventory().getContents()) if(content != null && content.isSimilar(shop.getBuyItem())) availibleAmount += content.getAmount();
 		
 		return availibleAmount >= desiredAmount;
+	}
+	
+	@Override
+	public void update() {
+		super.update();
+		
+		if(enoughDosh(1) && transactable(1) && Shop.getShop(getReference()).transactable(1)) 
+			getSign().setLine(3, ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Can Trade");
+		else getSign().setLine(3, ChatColor.GRAY + "" + ChatColor.BOLD + "Cannot Trade");
+		
+		getSign().update();
 	}
 
 }

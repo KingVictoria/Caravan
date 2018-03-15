@@ -1,8 +1,5 @@
 package main;
 
-import java.util.ArrayList;
-
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -16,38 +13,9 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 public class PlayerInteractListener implements Listener {
 	
-	/*
-	 * PROCESS: 
-	 * 1. Get Generated Key(s) (Shop -> Dist and Coll) (Buy -> Recp)
-	 * 2. Right click on sign on chest with appropriate key (will eventually need to check for reinforcement)
-	 * 3. IF SHOP -> Fill with necessary materials and right click to activate
-	 * 4. IF RECP -> Fill with transaction requirement and right click to send trade
-	 */
-	
 	@EventHandler
 	public void onPlayerInteract(PlayerInteractEvent e) {
 		Player player = e.getPlayer();
-		
-		/* TEST CODE */
-		
-		if(e.getClickedBlock().getType().equals(Material.GRASS)) {
-			ItemStack succ = new ItemStack(Material.PAPER);
-			ItemMeta succMeta = succ.getItemMeta();
-			ArrayList<String> lore = new ArrayList<>();
-			lore.add("succ");
-			succMeta.setLore(lore);
-			succMeta = ItemMetaSerializer.deSerialize(ItemMetaSerializer.serialize(succMeta, Material.PAPER));
-			Bukkit.getLogger().info(""+succMeta.hasLore());
-			// **AHEM** PRAISE TITOS
-			succ.setItemMeta(succMeta);
-			player.getInventory().addItem(succ);
-		}
-		
-		/* TEST CODE */
-		
-		if(!player.getInventory().getItemInMainHand().getType().equals(Material.PAPER)) return;	// Make sure item in hand is paper
-		
-		ItemStack key = player.getInventory().getItemInMainHand();
 		
 		if(!e.getClickedBlock().getType().equals(Material.WALL_SIGN)) return; // If not a wall sign, return
 		
@@ -57,6 +25,15 @@ public class PlayerInteractListener implements Listener {
 		if(!(block.getType().equals(Material.CHEST) || block.getType().equals(Material.TRAPPED_CHEST))) return;	// If not a chest, return
 		
 		Chest chest = (Chest) block.getState();
+		
+		if(TradeChest.isTradeChest(chest)) { // If already is TradeChest...
+			TradeChest.getTradeChest(chest).update();
+			return;
+		}
+		
+		if(!player.getInventory().getItemInMainHand().getType().equals(Material.PAPER)) return;	// Make sure item in hand is paper
+
+		ItemStack key = player.getInventory().getItemInMainHand();
 		
 		ItemMeta keyMeta = key.getItemMeta();
 		try { if(Shop.getShop(Integer.parseInt(keyMeta.getLore().get(0))) == null) return; } catch (Exception ex) { return; }

@@ -1,71 +1,95 @@
 package main;
-
-import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.Chest;
 import org.bukkit.block.Sign;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.configuration.serialization.ConfigurationSerializable;
+import org.bukkit.inventory.ItemStack;
 
 /**
  * Abstract TradeChest class from which the two types (Collection and Distribution) extend
  * @author KingVictoria
  */
-public abstract class TradeChest implements Serializable {
-	private static final long serialVersionUID = 7521932815577470025L;
+public class TradeChest implements ConfigurationSerializable {
+
+	private Sign sign;		// Sign block
+	private Chest chest;	// Chest block
+	
+	private int reference;	// Reference number of the shop this TradeChest is associated with
+	private UUID owner;		// Unique Identification of owner
+	
+	private ItemStack item;	// Item to trade
+	private int amount;		// Amount of item to exchange
 	
 	/**
-	 * Serializable Location for Location Serialization
-	 * @author KingVictoria
+	 * Goes through all the TradeChests to see if a given Chest Block matches
+	 * @param chest
+	 * @return
 	 */
-	class SerializableLocation implements Serializable {
-		private static final long serialVersionUID = -4669465984456536290L;
-
-		int x, y, z;	// Coordinates
-		String world;	// World Name
-		
-		SerializableLocation(Location loc) {
-			x = loc.getBlockX();
-			y = loc.getBlockY();
-			z = loc.getBlockZ();
-			world = loc.getWorld().getName();
+	public static boolean isTradeChest(Chest chest) {
+		for(Shop shop: Shop.shops) {
+			if(shop.getDistributionChest().getChest().equals(chest)) return true;
+			if(shop.getCollectionChest().getChest().equals(chest)) return true;
+			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().equals(chest)) return true;
 		}
 		
-		Location getLocation() {
-			return new Location(Bukkit.getWorld(world), x, y, z);
-		}
+		return false;
 	}
 	
-	SerializableLocation signLocation;	// Location of the Chest Block
-	SerializableLocation chestLocation;	// Location of the Sign Block
-	
-	int reference;	// Reference number of the shop this TradeChest is associated with
-	UUID owner;		// Unique Identification of owner
-	
-	ItemMetaSerializer meta;	// Serialzed meta of item
-	Material mat;				// Material of item
-	int amount;					// Amount of item to exchange
+	/**
+	 * Goes through all the TradeChests to see if a given Chest Block matches and returns the TradeChest if so
+	 * @param chest
+	 * @return
+	 */
+	public static TradeChest getTradeChest(Chest chest) {
+		for(Shop shop: Shop.shops) {
+			if(shop.getDistributionChest().getChest().equals(chest)) return shop.getDistributionChest();
+			if(shop.getCollectionChest().getChest().equals(chest)) return shop.getCollectionChest();
+			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().equals(chest)) return rc;
+		}
+		
+		return null;
+	}
 	
 	/**
 	 * Creates a generic TradeChest
 	 * @param sign Sign Block
 	 * @param chest Chest Block
-	 * @param owner Owner of the TradeChest as Entity Player
-	 * @param reference Reference Number of TradeChest
+	 * @param owner Owner UUID
+	 * @param reference Reference Number of the shop
+	 * @param item ItemStack item to trade
+	 * @param amount Amount of item to exchange
 	 */
-	public TradeChest(Sign sign, Chest chest, UUID owner, int reference, ItemMeta meta, Material mat, int amount) {
-		signLocation = new SerializableLocation(sign.getLocation());
-		chestLocation = new SerializableLocation(chest.getLocation());
-		
-		this.owner = owner;
-		this.reference = reference;
-		
-		this.meta = ItemMetaSerializer.serialize(meta, mat);
-		this.mat = mat;
-		this.amount = amount;
+	public TradeChest(Sign sign, Chest chest, UUID owner, int reference, ItemStack item, int amount) {
+		this.sign 		= sign;
+		this.chest 		= chest;
+		this.reference 	= reference;
+		this.owner 		= owner;
+		this.item 		= item;
+		this.amount 	= amount;
+	}
+	
+	/**
+	 * Creates a TradeChest from serial
+	 * @param map
+	 */
+	@SuppressWarnings("unchecked")
+	public TradeChest(Map<String, Object> map) {
+		sign 		= 	(Sign) 	Location.deserialize((Map<String, Object>) map.get("signloc")).getBlock().getState();
+		chest 		= 	(Chest) Location.deserialize((Map<String, Object>) map.get("chestloc")).getBlock().getState();
+		reference	=	(int)	map.get("reference");
+		owner		=	UUID.fromString((String) map.get("owner"));
+		item		=	ItemStack.deserialize((Map<String, Object>) map.get("item"));
+		if(map.containsKey("meta")) item.setItemMeta(ItemMetaSerializer.deserialize((Map<String, Object>) map.get("meta")));
+		amount		=	(int) map.get("amount");
+	}
+	
+	public int getReference() {
+		return reference;
 	}
 	
 	/**
@@ -73,7 +97,7 @@ public abstract class TradeChest implements Serializable {
 	 * @return
 	 */
 	public Chest getChest() {
-		return (Chest) chestLocation.getLocation().getBlock().getState();
+		return chest;
 	}
 	
 	/**
@@ -81,15 +105,46 @@ public abstract class TradeChest implements Serializable {
 	 * @return
 	 */
 	public Sign getSign() {
-		return (Sign) signLocation.getLocation().getBlock().getState();
+		return sign;
 	}
 	
 	/**
-	 * Gets the ItemMeta of the traded item
-	 * @return ItemMeta
+	 * Gets the Item to be traded here
+	 * @return ItemStack item
 	 */
-	public ItemMeta getItemMeta() {
-		return ItemMetaSerializer.deSerialize(meta);
+	public ItemStack getItem() {
+		return item;
+	}
+	
+	/**
+	 * Gets amount of an item to be traded per transaction
+	 * @return int amount
+	 */
+	public int getAmount() {
+		return amount;
+	}
+	
+	public int getContent() {
+		int content = 0;
+		
+		for(ItemStack item: chest.getInventory().getContents()) if(item != null && item.isSimilar(getItem())) content += item.getAmount();
+		
+		return content;
+	}
+	
+	@Override
+	public Map<String, Object> serialize() {
+		Map<String, Object> map = new HashMap<>();
+		
+		map.put("signloc", sign.getLocation().serialize());
+		map.put("chestloc", chest.getLocation().serialize());
+		map.put("reference", reference);
+		map.put("owner", owner.toString());
+		map.put("item", item.serialize());
+		if(item.hasItemMeta()) map.put("meta", item.getItemMeta().serialize());
+		map.put("amount", amount);
+		
+		return map;
 	}
 	
 	/**
@@ -97,6 +152,19 @@ public abstract class TradeChest implements Serializable {
 	 * @param num Number of transactions desired
 	 * @return True if able to be used for trade
 	 */
-	public abstract boolean transactable(int num);
+	public boolean transactable(int num) { return true; }
+	
+	/**
+	 * Updates the TradeChest Sign
+	 */
+	public void update() { 
+		sign.setLine(1, ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + getItem().getType().name() + ": " + ChatColor.LIGHT_PURPLE + getAmount());
+		if(transactable(1)) sign.setLine(2, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "In Store: " + ChatColor.GREEN + getContent());
+		else sign.setLine(2, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "In Store: " + ChatColor.GREEN + getContent());
+		if(Shop.getShop(reference).transactable(1)) sign.setLine(3, ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Shop Active");
+		else sign.setLine(3, ChatColor.GRAY + "" + ChatColor.BOLD + "Shop Inactive");
+		
+		sign.update();
+	}
 
 }

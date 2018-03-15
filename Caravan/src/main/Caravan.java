@@ -8,8 +8,8 @@ public class Caravan extends JavaPlugin {
 	
 	/* TODO:
 	 * ==Phase One==
-	 * - Create "Shop" which stores one collection chest and one distribution chest
-	 * - Create ReceiptChest extension of CollectionChest with methods related to that
+	 * DONE - Create "Shop" which stores one collection chest and one distribution chest
+	 * DONE - Create ReceiptChest extension of CollectionChest with methods related to that
 	 * - Set up rudimentary test which sends items from Shop to ReceiptChest
 	 * ==Phase Two==
 	 * - Create TradeStation and Terminal
@@ -27,7 +27,7 @@ public class Caravan extends JavaPlugin {
 	 * Initialization
 	 */
 	public void onLoad() {
-		Shop.shops = new ArrayList<Shop>();	// Loads Shops TODO load this from file
+		loadShops();
 	}
 	
 	/**
@@ -35,13 +35,27 @@ public class Caravan extends JavaPlugin {
 	 */
 	public void onEnable() {
 		getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+		
+		// TODO test commands
 	}
 	
 	/**
 	 * Disabled - Ensure it closes safely
 	 */
 	public void onDisable() {
+		saveShops();
+	}
+	
+	public void loadShops() {
 		
+		// TODO load shops
+		// ArrayList<Shop> shops = new ArrayList<>();
+		
+		Shop.shops = new ArrayList<Shop>();
+	}
+	
+	public void saveShops() {
+		// TODO save shops
 	}
 
 }
