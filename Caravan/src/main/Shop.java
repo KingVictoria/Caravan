@@ -60,13 +60,15 @@ public class Shop implements ConfigurationSerializable {
 		recps = new ArrayList<>();
 		reference = generateReference();
 		shops.add(this);
+		
+		Caravan.getInstance().saveShops();
 	}
 	
 	@SuppressWarnings("unchecked")
 	public Shop(Map<String, Object> map) {
 		
-		dist = (DistributionChest) 	new TradeChest((Map<String, Object>) map.get("dist"));
-		coll = (CollectionChest) 	new TradeChest((Map<String, Object>) map.get("coll"));
+		dist = new DistributionChest((Map<String, Object>) map.get("dist"));
+		coll = new CollectionChest((Map<String, Object>) map.get("coll"));
 		recps = new ArrayList<ReceiptChest>();
 		for(Map<String, Object> recpMap: ((ArrayList<Map<String, Object>>) map.get("recps")))
 			recps.add((ReceiptChest) new TradeChest(recpMap));
@@ -87,8 +89,8 @@ public class Shop implements ConfigurationSerializable {
 	public Map<String, Object> serialize() {
 		Map<String, Object> map = new HashMap<>();
 		
-		map.put("dist", dist.serialize());
-		map.put("coll", coll.serialize());
+		if(dist != null) map.put("dist", dist.serialize());
+		if(coll != null) map.put("coll", coll.serialize());
 		ArrayList<Map<String, Object>> serializedRecps = new ArrayList<>();
 		for(TradeChest tradeChest: recps) serializedRecps.add(tradeChest.serialize());
 		map.put("recps", serializedRecps);

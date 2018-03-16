@@ -32,9 +32,9 @@ public class TradeChest implements ConfigurationSerializable {
 	 */
 	public static boolean isTradeChest(Chest chest) {
 		for(Shop shop: Shop.shops) {
-			if(shop.getDistributionChest().getChest().equals(chest)) return true;
-			if(shop.getCollectionChest().getChest().equals(chest)) return true;
-			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().equals(chest)) return true;
+			if(shop.getDistributionChest() != null && shop.getDistributionChest().getChest().getLocation().equals(chest.getLocation())) return true;
+			if(shop.getCollectionChest() != null && shop.getCollectionChest().getChest().getLocation().equals(chest.getLocation())) return true;
+			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().getLocation().equals(chest.getLocation())) return true;
 		}
 		
 		return false;
@@ -47,9 +47,9 @@ public class TradeChest implements ConfigurationSerializable {
 	 */
 	public static TradeChest getTradeChest(Chest chest) {
 		for(Shop shop: Shop.shops) {
-			if(shop.getDistributionChest().getChest().equals(chest)) return shop.getDistributionChest();
-			if(shop.getCollectionChest().getChest().equals(chest)) return shop.getCollectionChest();
-			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().equals(chest)) return rc;
+			if(shop.getDistributionChest() != null && shop.getDistributionChest().getChest().getLocation().equals(chest.getLocation())) return shop.getDistributionChest();
+			if(shop.getCollectionChest() != null && shop.getCollectionChest().getChest().getLocation().equals(chest.getLocation())) return shop.getCollectionChest();
+			for(ReceiptChest rc: shop.getReceiptChests()) if(rc.getChest().getLocation().equals(chest.getLocation())) return rc;
 		}
 		
 		return null;
@@ -127,7 +127,7 @@ public class TradeChest implements ConfigurationSerializable {
 	public int getContent() {
 		int content = 0;
 		
-		for(ItemStack item: chest.getInventory().getContents()) if(item != null && item.isSimilar(getItem())) content += item.getAmount();
+		for(ItemStack item: getChest().getInventory().getContents()) if(item != null && item.isSimilar(getItem())) content += item.getAmount();
 		
 		return content;
 	}
@@ -159,8 +159,8 @@ public class TradeChest implements ConfigurationSerializable {
 	 */
 	public void update() { 
 		sign.setLine(1, ChatColor.DARK_PURPLE + "" + ChatColor.BOLD + getItem().getType().name() + ": " + ChatColor.LIGHT_PURPLE + getAmount());
-		if(transactable(1)) sign.setLine(2, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "In Store: " + ChatColor.GREEN + getContent());
-		else sign.setLine(2, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "In Store: " + ChatColor.GREEN + getContent());
+		if(transactable(1)) sign.setLine(2, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "In Store: " + ChatColor.DARK_GREEN + getContent());
+		else sign.setLine(2, ChatColor.DARK_RED + "" + ChatColor.BOLD + "In Store: " + ChatColor.DARK_RED + getContent());
 		if(Shop.getShop(reference).transactable(1)) sign.setLine(3, ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Shop Active");
 		else sign.setLine(3, ChatColor.GRAY + "" + ChatColor.BOLD + "Shop Inactive");
 		

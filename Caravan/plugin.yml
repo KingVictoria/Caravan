@@ -1,3 +1,7 @@
 name: Caravan
 main: main.Caravan
 version: 0.02
+commands:
+  cvn_make_shop:
+    description: Makes a shop (sell item in main hand, buy item in off hand)
+    usage: /cvn make shop <amount to sell> <amount to buy>

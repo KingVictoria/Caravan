@@ -45,7 +45,7 @@ public class PlayerInteractListener implements Listener {
 		} // Distribution
 		
 		else if(keyMeta.getDisplayName().equals("Collection Key")) {
-			if(shop.getDistributionChest() != null) return;	// If the DistributionChest already exists, return
+			if(shop.getCollectionChest() != null) return;	// If the DistributionChest already exists, return
 			shop.makeCollectionChest(chest, sign);
 		} // Collection
 		

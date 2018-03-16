@@ -3,35 +3,26 @@ package main;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.serialization.ConfigurationSerialization;
+import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Caravan extends JavaPlugin {
 	
-	/* TODO:
-	 * ==Phase One==
-	 * DONE - Create "Shop" which stores one collection chest and one distribution chest
-	 * DONE - Create ReceiptChest extension of CollectionChest with methods related to that
-	 * - Set up rudimentary test which sends items from Shop to ReceiptChest
-	 * ==Phase Two==
-	 * - Create TradeStation and Terminal
-	 * - Create Trade Lanes
-	 * - Create UI and Search Function
-	 * - Create Receipt Generation
-	 * - Set up test
-	 * ==Phase Three==
-	 * - Add costs for everything
-	 * - Create settings document to easily toy with values and costs
-	 * - Bug test for glitches
-	 */
+	private static Caravan instance;
+	
+	public static Caravan getInstance() {
+		return instance;
+	}
 	
 	/**
 	 * Initialization
 	 */
 	public void onLoad() {
-		
+		instance = this;
 	}
 	
 	/**
@@ -48,7 +39,19 @@ public class Caravan extends JavaPlugin {
 		
 		getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
 		
-		// TODO test commands
+		getCommand("cvn_make_shop").setExecutor((sender, cmd, label, args) -> {
+			if(args.length != 2 || !(sender instanceof Player)) return false;
+			int amountToSell, amountToBuy;
+			Player player = (Player) sender;
+			if(player.getInventory().getItemInMainHand() == null || player.getInventory().getItemInMainHand().getAmount() == 0) return false;
+			if(player.getInventory().getItemInOffHand()  == null || player.getInventory().getItemInOffHand().getAmount()  == 0) return false;
+			try { amountToSell = Integer.parseInt(args[0]); amountToBuy = Integer.parseInt(args[1]); } catch (Exception e) { return false; }
+			Shop shop = new Shop(player, player.getInventory().getItemInMainHand(), amountToSell, 
+									  	 player.getInventory().getItemInOffHand(), amountToBuy);
+			shop.generateDistributionKey(player);
+			shop.generateCollectionKey(player);
+			return true;
+		});
 	}
 	
 	/**
@@ -66,9 +69,18 @@ public class Caravan extends JavaPlugin {
 		checkData();
 		FileConfiguration myConfig = this.getConfig();	
 		
-		if(!myConfig.contains("shops")) Shop.shops = new ArrayList<Shop>();
+		if(!myConfig.contains("shops")) {
+			Shop.shops = new ArrayList<Shop>();
+			saveShops();
+			return;
+		}
 		
-		Shop.shops = (ArrayList<Shop>) myConfig.get("shops");
+		Shop.shops = new ArrayList<Shop>();
+		ArrayList<Map<String, Object>> maps =  (ArrayList<Map<String, Object>>) myConfig.getList("shops");
+		for(Map map: maps) {
+			Shop shop = new Shop(map);
+			shop.shops.add(shop);
+		}
 	}
 	
 	/**
@@ -83,11 +95,7 @@ public class Caravan extends JavaPlugin {
 		File file = new File(getDataFolder(), "config.yml");
 		if (!file.exists()) {
 			getLogger().info("config.yml not found, creating!");
-			try {
-				file.createNewFile();
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+			try { file.createNewFile(); } catch (IOException e) { e.printStackTrace(); }
 			saveDefaultConfig();
 		} else getLogger().info("config.yml found, loading!");
 	}
@@ -98,7 +106,19 @@ public class Caravan extends JavaPlugin {
 	public void saveShops() {
 		FileConfiguration myConfig = this.getConfig();
 		
-		myConfig.set("shops", Shop.shops);
+		ArrayList<Map<String, Object>> maps = new ArrayList<>();
+		for(Shop shop: Shop.shops)
+			maps.add(shop.serialize());
+		
+		myConfig.set("shops", maps);
+		
+		File file = new File(getDataFolder(), "config.yml");
+		try {
+			myConfig.save(file);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

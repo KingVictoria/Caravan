@@ -1,5 +1,6 @@
 package main;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.bukkit.ChatColor;
@@ -19,6 +20,10 @@ public class DistributionChest extends TradeChest implements ConfigurationSerial
 		
 		sign.setLine(0, ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "[DIST]");
 		update();
+	}
+
+	public DistributionChest(Map<String, Object> map) {
+		super(map);
 	}
 
 	@Override
